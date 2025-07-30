@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+// Login.tsx
+import React, { useState } from 'react';
 import { auth } from './firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
@@ -17,18 +18,12 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false); // Add loading state
     const navigate = useNavigate();
-    const location = useLocation();
-
-    useEffect(() => {
-        const loggedIn = localStorage.getItem('loggedIn');
-        if (loggedIn) {
-            navigate('/tracker', { replace: true });
-        }
-    }, [navigate]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+        setLoading(true); // Set loading to true
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
@@ -43,6 +38,8 @@ const Login = () => {
         } catch (error: any) {
             console.error('Login Error:', error.message, error.code);
             setError('Invalid email or password. Please try again.');
+        } finally {
+            setLoading(false); // Reset loading state
         }
     };
 
@@ -58,6 +55,7 @@ const Login = () => {
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="Email"
                         className="w-full p-2 border-2 border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        disabled={loading} // Disable input during loading
                     />
                     <input
                         type="password"
@@ -65,12 +63,14 @@ const Login = () => {
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Password"
                         className="w-full p-2 border-2 border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        disabled={loading} // Disable input during loading
                     />
                     <button
                         type="submit"
-                        className="w-full bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition"
+                        className="w-full bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition cursor-pointer disabled:opacity-50"
+                        disabled={loading} // Disable button during loading
                     >
-                        Login
+                        {loading ? 'Logging in...' : 'Login'}
                     </button>
                 </form>
                 <p className="mt-4 text-center">

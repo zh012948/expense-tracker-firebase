@@ -1,3 +1,4 @@
+// Tracker.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from './firebase';
@@ -21,6 +22,9 @@ const Tracker = () => {
     const [newExpenseName, setNewExpenseName] = useState('');
     const [newExpenseAmount, setNewExpenseAmount] = useState('');
     const [error, setError] = useState('');
+    const [budgetLoading, setBudgetLoading] = useState(false); // Loading state for budget
+    const [expenseLoading, setExpenseLoading] = useState(false); // Loading state for expense
+    const [logoutLoading, setLogoutLoading] = useState(false); // Loading state for logout
     const loggedIn = localStorage.getItem('loggedIn');
     const userName = localStorage.getItem('userName') || 'User';
 
@@ -55,6 +59,7 @@ const Tracker = () => {
             return;
         }
         setError('');
+        setBudgetLoading(true); // Set loading to true
         const user = auth.currentUser;
         if (!user) return;
         const userDocRef = doc(db, 'users', user.uid);
@@ -67,6 +72,8 @@ const Tracker = () => {
         } catch (err) {
             console.error('Error updating budget:', err);
             setError('Failed to update budget. Please try again.');
+        } finally {
+            setBudgetLoading(false); // Reset loading state
         }
     };
 
@@ -84,6 +91,7 @@ const Tracker = () => {
             return;
         }
         setError('');
+        setExpenseLoading(true); // Set loading to true
         const user = auth.currentUser;
         if (!user) return;
         const userDocRef = doc(db, 'users', user.uid);
@@ -95,10 +103,13 @@ const Tracker = () => {
         } catch (err) {
             console.error('Error adding expense:', err);
             setError('Failed to add expense. Please try again.');
+        } finally {
+            setExpenseLoading(false); // Reset loading state
         }
     };
 
     const handleLogout = async () => {
+        setLogoutLoading(true); // Set loading to true
         try {
             await signOut(auth);
             localStorage.removeItem('loggedIn');
@@ -107,6 +118,8 @@ const Tracker = () => {
         } catch (err) {
             console.error('Error logging out:', err);
             setError('Failed to log out. Please try again.');
+        } finally {
+            setLogoutLoading(false); // Reset loading state
         }
     };
 
@@ -121,9 +134,10 @@ const Tracker = () => {
                         <p className="text-lg text-gray-600">Welcome, {userName}</p>
                         <button
                             onClick={handleLogout}
-                            className="mt-2 bg-red-600 text-white p-2 rounded-lg hover:bg-red-700 transition"
+                            className="mt-2 bg-red-600 text-white p-2 rounded-lg hover:bg-red-700 transition cursor-pointer disabled:opacity-50"
+                            disabled={logoutLoading}
                         >
-                            Logout
+                            {logoutLoading ? 'Logging out...' : 'Logout'}
                         </button>
                     </div>
                 </div>
@@ -136,12 +150,14 @@ const Tracker = () => {
                             onChange={(e) => setBudget(e.target.value)}
                             placeholder="Enter Total Budget"
                             className="w-full p-2 border-2 border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            disabled={budgetLoading} // Disable input during loading
                         />
                         <button
                             onClick={updateBudget}
-                            className="w-full mt-3 bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition"
+                            className="w-full mt-3 bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition cursor-pointer disabled:opacity-50"
+                            disabled={budgetLoading} // Disable button during loading
                         >
-                            Update Budget
+                            {budgetLoading ? 'Updating...' : 'Update Budget'}
                         </button>
                     </div>
                     <div className="bg-white p-4 rounded-xl shadow-lg transform hover:scale-105 transition duration-300">
@@ -152,6 +168,7 @@ const Tracker = () => {
                             onChange={(e) => setNewExpenseName(e.target.value)}
                             placeholder="Expense Name"
                             className="w-full p-2 border-2 border-blue-200 rounded-lg mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            disabled={expenseLoading} // Disable input during loading
                         />
                         <input
                             type="number"
@@ -159,12 +176,14 @@ const Tracker = () => {
                             onChange={(e) => setNewExpenseAmount(e.target.value)}
                             placeholder="Expense Amount"
                             className="w-full p-2 border-2 border-blue-200 rounded-lg mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            disabled={expenseLoading} // Disable input during loading
                         />
                         <button
                             onClick={addExpense}
-                            className="w-full bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition"
+                            className="w-full bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition cursor-pointer disabled:opacity-50"
+                            disabled={expenseLoading} // Disable button during loading
                         >
-                            Add Expense
+                            {expenseLoading ? 'Adding...' : 'Add Expense'}
                         </button>
                     </div>
                 </div>
