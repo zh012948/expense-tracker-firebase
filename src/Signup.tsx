@@ -1,4 +1,3 @@
-// Signup.tsx
 import React, { useState } from 'react';
 import { auth } from './firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -6,26 +5,18 @@ import { useNavigate } from 'react-router-dom';
 import { db } from './firebase';
 import { doc, setDoc } from 'firebase/firestore';
 
-interface UserData {
-    email: string;
-    budget?: number;
-    expenses?: { name: string; amount: number; category?: string }[];
-    name?: string;
-    budgetHistory?: number[];
-}
-
 const Signup = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
     const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false); // Add loading state
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-        setLoading(true); // Set loading to true
+        setLoading(true);
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             await setDoc(doc(db, 'users', userCredential.user.uid), {
@@ -45,7 +36,7 @@ const Signup = () => {
                 setError(`Failed to create account. ${error.message || 'Please try again.'}`);
             }
         } finally {
-            setLoading(false); // Reset loading state
+            setLoading(false);
         }
     };
 
@@ -61,7 +52,7 @@ const Signup = () => {
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Name"
                         className="w-full p-2 border-2 border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        disabled={loading} // Disable input during loading
+                        disabled={loading}
                     />
                     <input
                         type="email"
@@ -69,7 +60,7 @@ const Signup = () => {
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="Email"
                         className="w-full p-2 border-2 border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        disabled={loading} // Disable input during loading
+                        disabled={loading}
                     />
                     <input
                         type="password"
@@ -77,12 +68,12 @@ const Signup = () => {
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Password"
                         className="w-full p-2 border-2 border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        disabled={loading} // Disable input during loading
+                        disabled={loading}
                     />
                     <button
                         type="submit"
                         className="w-full bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition cursor-pointer disabled:opacity-50"
-                        disabled={loading} // Disable button during loading
+                        disabled={loading}
                     >
                         {loading ? 'Signing up...' : 'Sign Up'}
                     </button>

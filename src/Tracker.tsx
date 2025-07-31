@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from './firebase';
-import { doc, onSnapshot, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { auth } from './firebase';
 import { signOut } from 'firebase/auth';
 import { FaEdit, FaTrash } from 'react-icons/fa';
@@ -268,7 +268,7 @@ const Tracker = () => {
                                             if (exp) {
                                                 setNewExpenseName(exp.name);
                                                 setNewExpenseAmount(exp.amount.toString());
-                                                setEditExpenseId(exp.id);
+                                                setEditExpenseId(exp.id || null); // Handle undefined id
                                             }
                                         }}
                                         className="text-blue-600 hover:text-blue-800 transition"
