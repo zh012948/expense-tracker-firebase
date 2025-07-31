@@ -1,10 +1,10 @@
-// Tracker.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from './firebase';
 import { doc, onSnapshot, updateDoc, getDoc } from 'firebase/firestore';
 import { auth } from './firebase';
 import { signOut } from 'firebase/auth';
+import { FaEdit, FaTrash } from 'react-icons/fa';
 
 interface UserData {
     email: string;
@@ -22,9 +22,10 @@ const Tracker = () => {
     const [newExpenseName, setNewExpenseName] = useState('');
     const [newExpenseAmount, setNewExpenseAmount] = useState('');
     const [error, setError] = useState('');
-    const [budgetLoading, setBudgetLoading] = useState(false); // Loading state for budget
-    const [expenseLoading, setExpenseLoading] = useState(false); // Loading state for expense
-    const [logoutLoading, setLogoutLoading] = useState(false); // Loading state for logout
+    const [budgetLoading, setBudgetLoading] = useState(false);
+    const [expenseLoading, setExpenseLoading] = useState(false);
+    const [logoutLoading, setLogoutLoading] = useState(false);
+    const [editExpenseId, setEditExpenseId] = useState<string | null>(null);
     const loggedIn = localStorage.getItem('loggedIn');
     const userName = localStorage.getItem('userName') || 'User';
 
@@ -59,21 +60,18 @@ const Tracker = () => {
             return;
         }
         setError('');
-        setBudgetLoading(true); // Set loading to true
+        setBudgetLoading(true);
         const user = auth.currentUser;
         if (!user) return;
         const userDocRef = doc(db, 'users', user.uid);
         try {
-            const userDoc = await getDoc(userDocRef);
-            const userData = userDoc.data() as UserData;
-            const newBudgetHistory = userData.budgetHistory ? [...userData.budgetHistory, totalBudget] : [totalBudget];
-            await updateDoc(userDocRef, { budget: newBudget, budgetHistory: newBudgetHistory });
+            await updateDoc(userDocRef, { budget: newBudget });
             setBudget('');
         } catch (err) {
             console.error('Error updating budget:', err);
             setError('Failed to update budget. Please try again.');
         } finally {
-            setBudgetLoading(false); // Reset loading state
+            setBudgetLoading(false);
         }
     };
 
@@ -91,7 +89,7 @@ const Tracker = () => {
             return;
         }
         setError('');
-        setExpenseLoading(true); // Set loading to true
+        setExpenseLoading(true);
         const user = auth.currentUser;
         if (!user) return;
         const userDocRef = doc(db, 'users', user.uid);
@@ -100,16 +98,68 @@ const Tracker = () => {
             await updateDoc(userDocRef, { expenses: newExpenses });
             setNewExpenseName('');
             setNewExpenseAmount('');
+            setEditExpenseId(null);
         } catch (err) {
             console.error('Error adding expense:', err);
             setError('Failed to add expense. Please try again.');
         } finally {
-            setExpenseLoading(false); // Reset loading state
+            setExpenseLoading(false);
+        }
+    };
+
+    const editExpense = async () => {
+        const newAmount = parseInt(newExpenseAmount);
+        const totalExpenses = expenses.reduce((acc, curr) => acc + curr.amount, 0);
+        const remainingBudget = totalBudget - totalExpenses;
+
+        if (!newExpenseName || isNaN(newAmount) || newAmount <= 0) {
+            setError('Please enter valid expense name and amount.');
+            return;
+        }
+        if (newAmount > remainingBudget + (expenses.find(exp => exp.id === editExpenseId)?.amount || 0)) {
+            setError('Expense exceeds remaining budget!');
+            return;
+        }
+        setError('');
+        setExpenseLoading(true);
+        const user = auth.currentUser;
+        if (!user || !editExpenseId) return;
+        const userDocRef = doc(db, 'users', user.uid);
+        try {
+            const newExpenses = expenses.map(exp =>
+                exp.id === editExpenseId ? { ...exp, name: newExpenseName, amount: newAmount } : exp
+            );
+            await updateDoc(userDocRef, { expenses: newExpenses });
+            setNewExpenseName('');
+            setNewExpenseAmount('');
+            setEditExpenseId(null);
+        } catch (err) {
+            console.error('Error editing expense:', err);
+            setError('Failed to edit expense. Please try again.');
+        } finally {
+            setExpenseLoading(false);
+        }
+    };
+
+    const deleteExpense = async (id: string | undefined) => {
+        if (!id) return;
+        setExpenseLoading(true);
+        const user = auth.currentUser;
+        if (!user) return;
+        const userDocRef = doc(db, 'users', user.uid);
+        try {
+            const newExpenses = expenses.filter(exp => exp.id !== id);
+            await updateDoc(userDocRef, { expenses: newExpenses });
+        } catch (err) {
+            console.error('Error deleting expense:', err);
+            setError('Failed to delete expense. Please try again.');
+        } finally {
+            setExpenseLoading(false);
         }
     };
 
     const handleLogout = async () => {
-        setLogoutLoading(true); // Set loading to true
+        setLogoutLoading(true);
         try {
             await signOut(auth);
             localStorage.removeItem('loggedIn');
@@ -119,7 +169,7 @@ const Tracker = () => {
             console.error('Error logging out:', err);
             setError('Failed to log out. Please try again.');
         } finally {
-            setLogoutLoading(false); // Reset loading state
+            setLogoutLoading(false);
         }
     };
 
@@ -150,25 +200,25 @@ const Tracker = () => {
                             onChange={(e) => setBudget(e.target.value)}
                             placeholder="Enter Total Budget"
                             className="w-full p-2 border-2 border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            disabled={budgetLoading} // Disable input during loading
+                            disabled={budgetLoading}
                         />
                         <button
                             onClick={updateBudget}
                             className="w-full mt-3 bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition cursor-pointer disabled:opacity-50"
-                            disabled={budgetLoading} // Disable button during loading
+                            disabled={budgetLoading}
                         >
                             {budgetLoading ? 'Updating...' : 'Update Budget'}
                         </button>
                     </div>
                     <div className="bg-white p-4 rounded-xl shadow-lg transform hover:scale-105 transition duration-300">
-                        <h2 className="text-xl font-semibold text-blue-600 mb-3">Add Expense</h2>
+                        <h2 className="text-xl font-semibold text-blue-600 mb-3">Add/Edit Expense</h2>
                         <input
                             type="text"
                             value={newExpenseName}
                             onChange={(e) => setNewExpenseName(e.target.value)}
                             placeholder="Expense Name"
                             className="w-full p-2 border-2 border-blue-200 rounded-lg mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            disabled={expenseLoading} // Disable input during loading
+                            disabled={expenseLoading}
                         />
                         <input
                             type="number"
@@ -176,14 +226,14 @@ const Tracker = () => {
                             onChange={(e) => setNewExpenseAmount(e.target.value)}
                             placeholder="Expense Amount"
                             className="w-full p-2 border-2 border-blue-200 rounded-lg mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            disabled={expenseLoading} // Disable input during loading
+                            disabled={expenseLoading}
                         />
                         <button
-                            onClick={addExpense}
+                            onClick={editExpenseId ? editExpense : addExpense}
                             className="w-full bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition cursor-pointer disabled:opacity-50"
-                            disabled={expenseLoading} // Disable button during loading
+                            disabled={expenseLoading}
                         >
-                            {expenseLoading ? 'Adding...' : 'Add Expense'}
+                            {expenseLoading ? (editExpenseId ? 'Saving...' : 'Adding...') : (editExpenseId ? 'Save Changes' : 'Add Expense')}
                         </button>
                     </div>
                 </div>
@@ -203,7 +253,7 @@ const Tracker = () => {
                         </p>
                     </div>
                 </div>
-                <div className="bg-white p-4 rounded-xl shadow-lg mt-6">
+                <div className="bg-white p-4 rounded-xl shadow-lg mt-6 relative" style={{ borderLeft: '4px solid #3b82f6' }}>
                     <h2 className="text-xl font-semibold text-blue-600 mb-3">Expense List</h2>
                     {error && <p className="text-red-500 mb-2">{error}</p>}
                     <ul className="space-y-2">
@@ -211,6 +261,29 @@ const Tracker = () => {
                             <li key={expense.id} className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
                                 <span className="text-base text-gray-700">{expense.name}</span>
                                 <span className="text-base text-gray-700">{expense.amount}</span>
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={() => {
+                                            const exp = expenses.find(e => e.id === expense.id);
+                                            if (exp) {
+                                                setNewExpenseName(exp.name);
+                                                setNewExpenseAmount(exp.amount.toString());
+                                                setEditExpenseId(exp.id);
+                                            }
+                                        }}
+                                        className="text-blue-600 hover:text-blue-800 transition"
+                                        disabled={expenseLoading}
+                                    >
+                                        <FaEdit />
+                                    </button>
+                                    <button
+                                        onClick={() => deleteExpense(expense.id)}
+                                        className="text-red-500 hover:text-red-700 transition"
+                                        disabled={expenseLoading}
+                                    >
+                                        <FaTrash />
+                                    </button>
+                                </div>
                             </li>
                         ))}
                     </ul>
