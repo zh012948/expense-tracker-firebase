@@ -44,10 +44,12 @@ const Tracker = () => {
                     setExpenses(userData.expenses?.map((exp, index) => ({ ...exp, id: `${user.uid}_${index}` })) || []);
                 } else {
                     setError('User data not found. Please sign up or contact support.');
+                    alert('User data not found. Please sign up or contact support.');
                 }
             }, (error) => {
                 console.error('Real-time listener error:', error);
                 setError('Failed to load data in real-time. Please try again.');
+                alert('Failed to load data in real-time. Please try again.');
             });
             return () => unsubscribe();
         }
@@ -57,6 +59,8 @@ const Tracker = () => {
         const newBudget = parseInt(budget);
         if (isNaN(newBudget) || newBudget < 0) {
             setError('Please enter a valid budget amount.');
+            alert('Please enter a valid budget amount.');
+
             return;
         }
         setError('');
@@ -70,6 +74,7 @@ const Tracker = () => {
         } catch (err) {
             console.error('Error updating budget:', err);
             setError('Failed to update budget. Please try again.');
+            alert('Failed to update budget. Please try again.');
         } finally {
             setBudgetLoading(false);
         }
@@ -82,10 +87,12 @@ const Tracker = () => {
 
         if (!newExpenseName || isNaN(newAmount) || newAmount <= 0) {
             setError('Please enter valid expense name and amount.');
+            alert('Please enter valid expense name and amount.');
             return;
         }
         if (newAmount > remainingBudget) {
             setError('Expense exceeds remaining budget!');
+            alert('Expense exceeds remaining budget!');
             return;
         }
         setError('');
@@ -102,6 +109,7 @@ const Tracker = () => {
         } catch (err) {
             console.error('Error adding expense:', err);
             setError('Failed to add expense. Please try again.');
+            alert('Failed to add expense. Please try again.');
         } finally {
             setExpenseLoading(false);
         }
@@ -114,10 +122,12 @@ const Tracker = () => {
 
         if (!newExpenseName || isNaN(newAmount) || newAmount <= 0) {
             setError('Please enter valid expense name and amount.');
+            alert('Please enter valid expense name and amount.');
             return;
         }
         if (newAmount > remainingBudget + (expenses.find(exp => exp.id === editExpenseId)?.amount || 0)) {
             setError('Expense exceeds remaining budget!');
+            alert('Expense exceeds remaining budget!');
             return;
         }
         setError('');
@@ -136,6 +146,7 @@ const Tracker = () => {
         } catch (err) {
             console.error('Error editing expense:', err);
             setError('Failed to edit expense. Please try again.');
+            alert('Failed to edit expense. Please try again.');
         } finally {
             setExpenseLoading(false);
         }
@@ -153,6 +164,7 @@ const Tracker = () => {
         } catch (err) {
             console.error('Error deleting expense:', err);
             setError('Failed to delete expense. Please try again.');
+            alert('Failed to delete expense. Please try again.');
         } finally {
             setExpenseLoading(false);
         }
@@ -168,6 +180,7 @@ const Tracker = () => {
         } catch (err) {
             console.error('Error logging out:', err);
             setError('Failed to log out. Please try again.');
+            alert('Failed to log out. Please try again.');
         } finally {
             setLogoutLoading(false);
         }
